@@ -1,0 +1,10 @@
+com\mycompany\hibernate_config\DAO\Libro_compraDAO.class
+com\mycompany\hibernate_config\Editorial.class
+com\mycompany\hibernate_config\Autor.class
+com\mycompany\hibernate_config\DAO\LibroAutorDAO.class
+com\mycompany\hibernate_config\DAO\AutorDAO.class
+com\mycompany\hibernate_config\Cliente.class
+com\mycompany\hibernate_config\Librocompra.class
+com\mycompany\hibernate_config\Hibernate_config.class
+com\mycompany\hibernate_config\Libro.class
+com\mycompany\hibernate_config\DAO\LibroDAO.class
