@@ -15,6 +15,7 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -43,7 +44,7 @@ public class Autor implements Serializable {
     @Column(name = "apellido")
     private String apellido;
     @ManyToMany(mappedBy = "autorList")
-    private List<Libro> libroList;
+    private List<Libro> libroList = new ArrayList<>();
 
     public Autor() {
     }
@@ -54,6 +55,10 @@ public class Autor implements Serializable {
 
     public Autor(Integer id, String nombre) {
         this.id = id;
+        this.nombre = nombre;
+    }
+
+    public Autor(String nombre) {
         this.nombre = nombre;
     }
 

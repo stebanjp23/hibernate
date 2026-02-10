@@ -4,8 +4,10 @@
  */
 package com.mycompany.hibernate_config.DAO;
 
+import com.mycompany.hibernate_config.Autor;
 import com.mycompany.hibernate_config.Libro;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import java.util.List;
 
 /**
@@ -30,6 +32,19 @@ public class LibroDAO {
         return em.find(Libro.class, id);
     }
 
+    public Libro buscarPornom(String nombre) {
+        try {
+            return em.createQuery(
+                    "SELECT l FROM Libro l WHERE l.titulo = :titulo",
+                    Libro.class
+            )
+                    .setParameter("titulo", nombre)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        }
+    }
+
     public List<Libro> listarTodos() {
         return em.createQuery("SELECT l FROM Libro l", Libro.class).getResultList();
     }
@@ -42,7 +57,15 @@ public class LibroDAO {
 
     public void borrar(Libro libro) {
         em.getTransaction().begin();
-        em.remove(libro);
+
+        Libro managed = em.merge(libro);
+
+        // romper relación ManyToMany
+        managed.removeAutores();
+
+        em.remove(managed);
+
         em.getTransaction().commit();
+        em.close();
     }
 }

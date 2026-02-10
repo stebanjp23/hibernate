@@ -7,6 +7,7 @@ package com.mycompany.hibernate_config.DAO;
 import com.mycompany.hibernate_config.Autor;
 import com.mycompany.hibernate_config.Libro;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import java.util.List;
 
 /**
@@ -29,6 +30,21 @@ public class LibroAutorDAO {
 
     public Autor buscarAutor(int id) {
         return em.find(Autor.class, id);
+    }
+
+    public Autor buscarAutor_nom(String nombre) {
+        try {
+            return em.createQuery(
+                    "SELECT a FROM Autor a WHERE a.nombre = :nombre",
+                    Autor.class
+            )
+                    .setParameter("nombre", nombre)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        } finally {
+            em.close();
+        }
     }
 
     public List<Libro> listar_libro_autor(int id) {

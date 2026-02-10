@@ -20,6 +20,7 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -34,7 +35,6 @@ import java.util.List;
     @NamedQuery(name = "Libro.findByTitulo", query = "SELECT l FROM Libro l WHERE l.titulo = :titulo"),
     @NamedQuery(name = "Libro.findByIsbn", query = "SELECT l FROM Libro l WHERE l.isbn = :isbn"),
     @NamedQuery(name = "Libro.findByStock", query = "SELECT l FROM Libro l WHERE l.stock = :stock")})
-
 
 public class Libro implements Serializable {
 
@@ -52,16 +52,36 @@ public class Libro implements Serializable {
     @Basic(optional = false)
     @Column(name = "stock")
     private int stock;
+
     @JoinTable(name = "libro_autor", joinColumns = {
         @JoinColumn(name = "libro_id", referencedColumnName = "id")}, inverseJoinColumns = {
         @JoinColumn(name = "autor_id", referencedColumnName = "id")})
-    @ManyToMany
-    private List<Autor> autorList;
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+
+    private List<Autor> autorList = new ArrayList<>();
+
+    public void addAutor(Autor autor) {
+        if (!autorList.contains(autor)) {
+            autorList.add(autor);
+        }
+        if (!autor.getLibroList().contains(this)) {
+            autor.getLibroList().add(this);
+        }
+    }
+    
+    public void removeAutores() {
+    for (Autor autor : autorList) {
+        autor.getLibroList().remove(this);
+    }
+    autorList.clear();
+}
+
     @JoinColumn(name = "editorial_id", referencedColumnName = "id")
     @ManyToOne
+
     private Editorial editorialId;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "libroId")
-    private List<Librocompra> librocompraList;
+    private List<Librocompra> librocompraList = new ArrayList<>();
 
     public Libro() {
     }
@@ -74,6 +94,15 @@ public class Libro implements Serializable {
         this.id = id;
         this.titulo = titulo;
         this.stock = stock;
+    }
+
+    public Libro(Integer id, String titulo, String isbn, int stock, List<Autor> autorList, Editorial editorialId) {
+        this.id = id;
+        this.titulo = titulo;
+        this.isbn = isbn;
+        this.stock = stock;
+        this.autorList = autorList;
+        this.editorialId = editorialId;
     }
 
     public Integer getId() {
@@ -156,5 +185,5 @@ public class Libro implements Serializable {
     public String toString() {
         return "com.mycompany.hibernate_config.Libro[ id=" + id + " ]";
     }
-    
+
 }

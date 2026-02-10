@@ -18,20 +18,20 @@ import javax.crypto.AEADBadTagException;
 public class Hibernate_config {
 
     public static void main(String[] args) {
-        Scanner lector = new Scanner(System.in); 
-        
+        Scanner lector = new Scanner(System.in);
+
         String persistencia = "LibreriaBD"; // Nombre de la unidad de persistencia definida en persistence.xml
-        
+
         // Creación de EntityManagerFactory y EntityManager para gestionar la conexión con la base de datos
         EntityManagerFactory emf = Persistence.createEntityManagerFactory(persistencia);
         EntityManager em = emf.createEntityManager();
-        
+
         // Creamos instancias de los DAO pasando el EntityManager
         LibroDAO libroDAO = new LibroDAO(em);
         LibroAutorDAO autorDAO = new LibroAutorDAO(em);
         AutorDAO nuevo_autordao = new AutorDAO(em);
 
-        int op = 0; 
+        int op = 0;
 
         // Bucle principal del programa
         do {
@@ -43,7 +43,8 @@ public class Hibernate_config {
             System.out.println("4. Listar Libros ");
             System.out.println("5. Nueva venta ");
             System.out.println("6. Listar libros por autor");
-            System.out.println("7. Salir");
+            System.out.println("7. Eliminar libro");
+            System.out.println("8. Salir");
             System.out.print("Selecciona una opción: ");
 
             try {
@@ -56,40 +57,46 @@ public class Hibernate_config {
                         String titulo = lector.nextLine();
                         System.out.print("ISBN: ");
                         String isbn = lector.nextLine();
-                        
-                        System.out.println("Nombre Autor: ");
+
+                        System.out.print("Nombre Autor: ");
                         String nom_at = lector.nextLine();
-                        
-                        System.out.println("Apellido Autor: ");
+
+                        System.out.print("Apellido Autor: ");
                         String ap_at = lector.nextLine();
-                        
+
                         System.out.print("Stock: ");
                         int stock = Integer.parseInt(lector.nextLine());
-                        
+
                         System.out.print("ID Editorial: ");
                         int editorial_Id = Integer.parseInt(lector.nextLine());
 
                         // Buscamos la editorial en la base de datos usando el EntityManager
                         Editorial editorial = em.find(Editorial.class, editorial_Id);
-                        Autor nuevo_aut = new Autor();
-                        nuevo_aut.setNombre(nom_at);
-                        nuevo_aut.setApellido(ap_at);
-                        
-                        nuevo_autordao.crear(nuevo_aut);
-                        int id_autor_nuevo = nuevo_aut.getId();
-                        
+
                         if (editorial != null) {
+
+                            //Creación nuevo autor
+                            Autor nuevo_aut = new Autor();
+                            nuevo_aut.setNombre(nom_at);
+                            nuevo_aut.setApellido(ap_at);
+                            nuevo_autordao.crear(nuevo_aut);
+
                             // Si la editorial existe, creamos un nuevo libro
                             Libro nuevo = new Libro();
                             nuevo.setTitulo(titulo);
                             nuevo.setIsbn(isbn);
                             nuevo.setStock(stock);
                             nuevo.setEditorialId(editorial); // Asociamos el objeto Editorial al libro
-                            
 
-                            libroDAO.crear(nuevo); // Guardamos el libro en la base de datos                                 
-                            
-                            
+                            //Se asocia el autor al libro en la tabla Libro_autor
+                            nuevo.addAutor(nuevo_aut);
+
+                            libroDAO.crear(nuevo); // Guardamos el libro en la base de datos     
+                            System.out.println("---------------------------------------------------");
+                            System.out.println("Libro " + nuevo.getTitulo() + " añadido con exito");
+                            System.out.println("Autor " + nuevo_aut.getNombre() + "" + nuevo_aut.getApellido() + " ID: " + nuevo_aut.getId());
+                            System.out.println("---------------------------------------------------");
+
                         } else {
                             System.out.println("Error: La Editorial con ID " + editorial_Id + " no existe.");
                         }
@@ -112,10 +119,9 @@ public class Hibernate_config {
                         // Caso 3: Editar un libro existente
                         System.out.print("ID del libro a editar STOCK: ");
                         int idEdit = lector.nextInt();
-                        
-                        
+
                         Libro libroEdit = libroDAO.buscarPorId(idEdit); // Buscamos el libro por ID
-                        
+
                         if (libroEdit != null) {
                             System.out.println("---- " + libroEdit.getTitulo() + " ----");
                             System.out.print("Nuevo stock (actual (" + libroEdit.getStock() + "): ");
@@ -160,24 +166,45 @@ public class Hibernate_config {
                         // Caso 6: Listar libros de un autor
                         System.out.print("Introduzca ID autor: ");
                         int id_autor = Integer.parseInt(lector.nextLine());
-                        
-                        Autor autor = autorDAO.buscarAutor(id_autor); // Buscamos el autor
-                        if (autor != null) {
-                            List<Libro> libros_autor = autorDAO.listar_libro_autor(id_autor); // Obtenemos libros del autor
-                            if (!libros_autor.isEmpty()) {
-                                System.out.println("-- " + autor.getNombre() + " " + autor.getApellido() + " --");
-                                for (Libro libro : libros_autor) {
-                                    System.out.println("- " + libro.getTitulo());
+
+                        try {
+                            Autor autor = autorDAO.buscarAutor(id_autor);
+                            if (autor != null) {
+                                List<Libro> libros_autor = autor.getLibroList();
+
+                                if (!libros_autor.isEmpty()) {
+                                    System.out.println("-- " + autor.getNombre() + " " + autor.getApellido() + " --");
+                                    for (Libro libro : libros_autor) {
+                                        System.out.println("- " + libro.getTitulo());
+                                    }
+                                } else {
+                                    System.out.println("Autor no tiene libros asociados");
                                 }
                             } else {
-                                System.out.println("Autor no tiene libros asociados");
+                                System.out.println("Autor no encontrado o no existe");
                             }
-                        } else {
-                            System.out.println("Autor no encontrado o no existe");
+                        } catch (Exception e) {
+                            System.out.println(e);
                         }
+
+                        break;
+                    case 7:
+                        // Caso 7: eliminar libro
+                        System.out.print("Introduzca el nombre del libro a eliminar: ");
+                        String nom_libro = lector.nextLine();
+
+                        Libro eliminar = libroDAO.buscarPornom(nom_libro);
+
+                        if (eliminar != null) {
+                            libroDAO.borrar(eliminar);
+                            System.out.println("Libro eliminado con exito!");
+                        } else {
+                            System.out.println("No se ha podido eliminar el libro");
+                        }
+
                         break;
 
-                    case 7:
+                    case 8:
                         System.out.println("Cerrando...");
                         break;
 
@@ -188,7 +215,7 @@ public class Hibernate_config {
                 // Captura errores si el usuario introduce un valor no numérico
                 System.out.println("Error: Introduce un valor válido. " + e.getMessage());
             }
-        } while (op != 7); // Repetimos hasta que el usuario elija salir
+        } while (op != 8); // Repetimos hasta que el usuario elija salir
 
         // Cerramos los recursos de JPA
         em.close();
